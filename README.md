@@ -1,4 +1,3 @@
-cat > README.md << 'EOF'
 # Log File Analyzer
 
 A terminal + Python project that parses Apache server access logs and answers
@@ -106,11 +105,17 @@ Windows filesystem (C:\Users\...), for correct and fast tool behavior.
   than loosening the regex, since a stricter regex correctly flags
   genuinely malformed data instead of silently mis-parsing it.
 
+### Step 6: Top IPs & Top URLs
+- Added top_ips() and top_urls() to analyzer.py, using the same
+  Counter-based "extract field -> count -> sort" pattern as status codes
+  and busiest hours.
+- Cross-checked both against raw awk/sort/uniq terminal commands to
+  confirm the Python output matched exactly.
+
 ## Status
 
 In progress. Working: log exploration, parsing, status code analysis,
-busiest-hour analysis. Coming next: top requesting IPs, top requested
-URLs/pages, and a cleaner final report output.
+busiest-hour analysis. Coming next: a cleaner final report output.
 
 ## Skills Demonstrated
 
@@ -119,4 +124,3 @@ URLs/pages, and a cleaner final report output.
 - Python data processing (collections.Counter, datetime parsing)
 - Translating terminal-based exploration into a reusable Python workflow
 - Debugging real-world malformed data instead of assuming clean input
-EOF
