@@ -1,3 +1,4 @@
+import csv
 from collections import Counter
 from datetime import datetime
 from parser import parse_log_file
@@ -35,6 +36,59 @@ def top_urls(records, top_n=10):
     counter = Counter(r["path"] for r in records)
     return counter.most_common(top_n)
 
+def save_text_report(records, filepath="report.txt"):
+    """
+    Writes the full analysis report to a plain text file, same content as what prints to the terminal.
+    """
+    with open(filepath, "w") as f:
+        f.write("=" * 50 + "\n")
+        f.write("TOP STATUS CODES\n")
+        f.write("=" * 50 + "\n")
+        for status, count in top_status_codes(records):
+            f.write(f" {status}: {count} requests\n")
+
+        f.write("\n" + "=" * 50 + "\n")
+        f.write("BUSIEST HOURS (24-hour format)\n")
+        f.write("=" * 50 + "\n")
+        for hour, count in busiest_hours(records):
+            f.write(f" {hour:02d}:00 - {count} requests\n")
+
+        f.write("\n" + "=" * 50 + "\n")
+        f.write("TOP 10 IP ADDRESSES\n")
+        f.write("=" * 50 + "\n")
+        for ip, count in top_ips(records):
+            f.write(f" {ip}: {count} requests\n")
+
+        f.write("\n" + "=" * 50 + "\n")
+        f.write("TOP 10 REQUESTED URLS\n")
+        f.write("=" * 50 + "\n")
+        for url, count in top_urls(records):
+            f.write(f" {url}: {count} requests\n")
+
+    print(f"Text report saved to {filepath}")
+
+def save_csv_report(records, filepath="report.csv"):
+    """
+    Writes each analysis section to a single to a single CSV file, with a 'category' column so all four sections coexist in one file.
+    """
+    with open(filepath, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["category", "key", "count"])
+
+        for status, count in top_status_codes(records):
+            writer.writerow(["status_code", status, count])
+
+        for hour, count in busiest_hours(records):
+            writer.writerow(["busiest_hour", f"{hour:02d}:00", count])
+
+        for ip, count in top_ips(records):
+            writer.writerow(["top_ip", ip, count])
+
+        for url, count in top_urls(records):
+            writer.writerow(["top_url", url, count])
+
+    print(f"CSV report saved to {filepath}")
+
 def print_report(records):
     print("=" * 50)
     print("TOP STATUS CODES")
@@ -66,3 +120,5 @@ def print_report(records):
 if __name__ == "__main__":
     records = parse_log_file("data/access.log")
     print_report(records)
+    save_text_report(records)
+    save_csv_report(records)
