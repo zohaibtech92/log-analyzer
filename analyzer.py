@@ -21,6 +21,20 @@ def busiest_hours(records, top_n=10):
 
     return counter.most_common(top_n)
 
+def top_ips(records, top_n=10):
+    """
+    Counts how many requests came from each IP address and return the most frequent ones. Useful for spotting bots/scrapers or your heaviesr traffic sources.
+    """
+    counter = Counter(r["ip"] for r in records)
+    return counter.most_common(top_n)
+
+def top_urls(records, top_n=10):
+    """
+    Counts how many times each requested path (URL) was hit and returns the most popular ones. Useful for understanding what content actually gets traffic.
+    """
+    counter = Counter(r["path"] for r in records)
+    return counter.most_common(top_n)
+
 def print_report(records):
     print("=" * 50)
     print("TOP STATUS CODES")
@@ -34,6 +48,20 @@ def print_report(records):
     print("=" * 50)
     for hour, count in busiest_hours(records):
         print(f" {hour:02d}:00 - {count} requests")
+
+    print()
+    print("=" * 50)
+    print("TOP 10 IP ADDRESSES")
+    print("=" * 50)
+    for ip, count in top_ips(records):
+        print(f" {ip}: {count} requests")
+
+    print()
+    print("=" * 50)
+    print("TOP REQUESTED URLS")
+    print("=" * 50)
+    for url, count in top_urls(records):
+        print(f" {url}: {count} requests")
 
 if __name__ == "__main__":
     records = parse_log_file("data/access.log")
