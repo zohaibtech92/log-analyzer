@@ -112,10 +112,14 @@ Windows filesystem (C:\Users\...), for correct and fast tool behavior.
 - Cross-checked both against raw awk/sort/uniq terminal commands to
   confirm the Python output matched exactly.
 
+### Step 7: Save Reports to File
+- Added save_text_report() and save_csv_report() to write the full
+  analysis to report.txt and report.csv instead of only printing to
+  the terminal.
+- Added report.txt and report.csv to .gitignore since they're generated
+  output, not source code.
 ## Status
-
-In progress. Working: log exploration, parsing, status code analysis,
-busiest-hour analysis. Coming next: a cleaner final report output.
+In the final stages
 
 ## Skills Demonstrated
 
