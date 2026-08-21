@@ -4,9 +4,9 @@ A terminal + Python project that parses Apache server access logs and answers
 real questions like "what are the top error codes" and "what times get the
 most traffic."
 
-This project was built to practice core Linux terminal tools (grep, awk,
-sort, uniq) and then translate that same logic into a proper, reusable
-Python parsing and analysis workflow.
+Built to practice core Linux terminal tools (grep, awk, sort, uniq) and
+translate that same logic into a reusable Python parsing and analysis
+workflow with a proper command-line interface.
 
 ## What This Project Does
 
@@ -16,12 +16,16 @@ Python parsing and analysis workflow.
 4. Analyzes the structured data to answer:
    - What are the most common HTTP status codes (200, 404, 500, etc.)?
    - What hours of the day get the most traffic?
+   - Which IP addresses send the most requests?
+   - Which URLs/pages are requested most often?
+5. Saves the report to both a plain text file and a CSV file
+6. Accepts command-line arguments so it can analyze any log file, not just
+   the sample data
 
 ## Dataset
 
-Sample Apache Combined Log Format data (10,000 real-world-style requests),
-sourced from the Elastic examples repo:
-https://github.com/elastic/examples
+Sample Apache Combined Log Format data (10,000 requests), sourced from the
+Elastic examples repo: https://github.com/elastic/examples
 
 Each log line looks like this:
 
@@ -41,7 +45,7 @@ Field breakdown:
 log-analyzer/
 - data/access.log   -> sample log data (10,000 lines)
 - parser.py          -> parses raw log lines into structured Python records
-- analyzer.py         -> runs analysis on parsed records (status codes, busiest hours)
+- analyzer.py         -> runs analysis, handles CLI args, saves reports
 - README.md
 
 ## How to Run
@@ -50,8 +54,16 @@ Make sure Python 3 is installed, then from the project folder run:
 
 python3 analyzer.py
 
-This will parse the log file and print a report of top status codes and
-busiest hours directly to the terminal.
+This parses the log file and prints a report of top status codes, busiest
+hours, top IPs, and top URLs directly to the terminal, then saves the same
+report to report.txt and report.csv.
+
+### Command-Line Options
+
+python3 analyzer.py --file data/access.log   # analyze a specific log file
+python3 analyzer.py --top 5                  # show top 5 results per category instead of 10
+python3 analyzer.py --no-save                # print to terminal only, skip saving files
+python3 analyzer.py --help                   # show all available options
 
 ## Development Environment Notes
 
@@ -61,7 +73,10 @@ migrated to run inside WSL (Windows Subsystem for Linux) with Ubuntu, so
 all terminal commands behave exactly as they would on a real Linux server.
 
 Project files live inside the Linux filesystem (~/log-analyzer), not the
-Windows filesystem (C:\Users\...), for correct and fast tool behavior.
+Windows filesystem (C:\Users\...). Editing or running files through the
+Windows-side path (\\wsl.localhost\...) caused real problems during
+development (permission errors, unreliable terminal output) and is avoided
+in favor of working directly inside the native Ubuntu terminal.
 
 ## How It Was Built (Progress Log)
 
@@ -97,18 +112,18 @@ Windows filesystem (C:\Users\...), for correct and fast tool behavior.
 - Used Python's collections.Counter to count status code occurrences and
   find the busiest hours (extracted from each request's timestamp using
   datetime.strptime).
-- Verified the results matched the earlier terminal-only awk/sort/uniq
-  output exactly, confirming the Python parsing logic was correct.
+- Verified results matched the earlier terminal-only awk/sort/uniq output
+  exactly, confirming the Python parsing logic was correct.
 - Found 1 malformed line out of 10,000 (a truncated Googlebot user agent
   string missing its closing quote) that correctly fails the regex and
-  gets skipped. This was left as an intentionally-skipped edge case rather
-  than loosening the regex, since a stricter regex correctly flags
-  genuinely malformed data instead of silently mis-parsing it.
+  gets skipped. Left as an intentionally-skipped edge case rather than
+  loosening the regex, since a stricter regex correctly flags genuinely
+  malformed data instead of silently mis-parsing it.
 
 ### Step 6: Top IPs & Top URLs
-- Added top_ips() and top_urls() to analyzer.py, using the same
-  Counter-based "extract field -> count -> sort" pattern as status codes
-  and busiest hours.
+- Added top_ips() and top_urls(), using the same Counter-based
+  "extract field -> count -> sort" pattern as status codes and busiest
+  hours.
 - Cross-checked both against raw awk/sort/uniq terminal commands to
   confirm the Python output matched exactly.
 
@@ -116,15 +131,34 @@ Windows filesystem (C:\Users\...), for correct and fast tool behavior.
 - Added save_text_report() and save_csv_report() to write the full
   analysis to report.txt and report.csv instead of only printing to
   the terminal.
+- Fixed a typo bug (f.wirte instead of f.write).
 - Added report.txt and report.csv to .gitignore since they're generated
   output, not source code.
+
+### Step 8: Command-Line Interface & Final Polish
+- Added argparse support: --file (analyze any log file), --top (control
+  how many results per category), --no-save (terminal-only mode), and
+  --help (auto-generated usage docs).
+- Debugged a PermissionError caused by accessing WSL files through the
+  Windows-side path (\\wsl.localhost\...) instead of the native Ubuntu
+  terminal; fixed with sudo chown to restore correct file ownership.
+- Fixed a bug where --top wasn't actually being passed through to the
+  saved report files (report.txt/report.csv always showed top 10
+  regardless of the --top value) - required threading the top_n
+  parameter consistently through every report-generating function.
+
 ## Status
-In the final stages
+
+Complete. Core features working: terminal-based log exploration, regex
+parsing, status code analysis, busiest-hour analysis, top IPs, top URLs,
+text/CSV export, and a full command-line interface.
 
 ## Skills Demonstrated
 
 - Linux terminal fluency: grep, awk, sort, uniq, wc
 - Regular expressions for structured text parsing
 - Python data processing (collections.Counter, datetime parsing)
+- Building a command-line interface with argparse
 - Translating terminal-based exploration into a reusable Python workflow
-- Debugging real-world malformed data instead of assuming clean input
+- Debugging real-world issues: malformed data, typos, file permissions,
+  environment configuration (WSL vs native Windows)
