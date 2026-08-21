@@ -1,3 +1,4 @@
+import argparse
 import csv
 from collections import Counter
 from datetime import datetime
@@ -36,7 +37,7 @@ def top_urls(records, top_n=10):
     counter = Counter(r["path"] for r in records)
     return counter.most_common(top_n)
 
-def save_text_report(records, filepath="report.txt"):
+def save_text_report(records, filepath="report.txt", top_n=10):
     """
     Writes the full analysis report to a plain text file, same content as what prints to the terminal.
     """
@@ -44,81 +45,112 @@ def save_text_report(records, filepath="report.txt"):
         f.write("=" * 50 + "\n")
         f.write("TOP STATUS CODES\n")
         f.write("=" * 50 + "\n")
-        for status, count in top_status_codes(records):
+        for status, count in top_status_codes(records, top_n):
             f.write(f" {status}: {count} requests\n")
 
         f.write("\n" + "=" * 50 + "\n")
         f.write("BUSIEST HOURS (24-hour format)\n")
         f.write("=" * 50 + "\n")
-        for hour, count in busiest_hours(records):
+        for hour, count in busiest_hours(records, top_n):
             f.write(f" {hour:02d}:00 - {count} requests\n")
 
         f.write("\n" + "=" * 50 + "\n")
-        f.write("TOP 10 IP ADDRESSES\n")
+        f.write(f"TOP {top_n} IP ADDRESSES\n")
         f.write("=" * 50 + "\n")
-        for ip, count in top_ips(records):
+        for ip, count in top_ips(records, top_n):
             f.write(f" {ip}: {count} requests\n")
 
         f.write("\n" + "=" * 50 + "\n")
-        f.write("TOP 10 REQUESTED URLS\n")
+        f.write(f"TOP {top_n} REQUESTED URLS\n")
         f.write("=" * 50 + "\n")
-        for url, count in top_urls(records):
+        for url, count in top_urls(records, top_n):
             f.write(f" {url}: {count} requests\n")
 
     print(f"Text report saved to {filepath}")
 
-def save_csv_report(records, filepath="report.csv"):
+def save_csv_report(records, filepath="report.csv", top_n=10):
     """
-    Writes each analysis section to a single to a single CSV file, with a 'category' column so all four sections coexist in one file.
+    Writes each analysis section to a single CSV file, with a 'category' column so all four sections coexist in one file.
     """
     with open(filepath, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["category", "key", "count"])
 
-        for status, count in top_status_codes(records):
+        for status, count in top_status_codes(records, top_n):
             writer.writerow(["status_code", status, count])
 
-        for hour, count in busiest_hours(records):
+        for hour, count in busiest_hours(records, top_n):
             writer.writerow(["busiest_hour", f"{hour:02d}:00", count])
 
-        for ip, count in top_ips(records):
+        for ip, count in top_ips(records, top_n):
             writer.writerow(["top_ip", ip, count])
 
-        for url, count in top_urls(records):
+        for url, count in top_urls(records, top_n):
             writer.writerow(["top_url", url, count])
 
     print(f"CSV report saved to {filepath}")
 
-def print_report(records):
+def print_report(records, top_n=10):
     print("=" * 50)
     print("TOP STATUS CODES")
     print("=" * 50)
-    for status, count in top_status_codes(records):
-        print(f" {status}: {count} requests")
+    for status, count in top_status_codes(records, top_n):
+        print(f"  {status}: {count} requests")
 
     print()
     print("=" * 50)
     print("BUSIEST HOURS (24-hour format)")
     print("=" * 50)
-    for hour, count in busiest_hours(records):
-        print(f" {hour:02d}:00 - {count} requests")
+    for hour, count in busiest_hours(records, top_n):
+        print(f"  {hour:02d}:00 - {count} requests")
 
     print()
     print("=" * 50)
-    print("TOP 10 IP ADDRESSES")
+    print(f"TOP {top_n} IP ADDRESSES")
     print("=" * 50)
-    for ip, count in top_ips(records):
-        print(f" {ip}: {count} requests")
+    for ip, count in top_ips(records, top_n):
+        print(f"  {ip}: {count} requests")
 
     print()
     print("=" * 50)
-    print("TOP REQUESTED URLS")
+    print(f"TOP {top_n} REQUESTED URLS")
     print("=" * 50)
-    for url, count in top_urls(records):
-        print(f" {url}: {count} requests")
+    for url, count in top_urls(records, top_n):
+        print(f"  {url}: {count} requests")
+
+def parse_args():
+    """
+    Defines and parses command-line arguments for the script.
+    """
+    parser = argparse.ArgumentParser(
+        description="Analyze an Apache access log file: top status codes, "
+                     "busiest hours, top IPs, and top URLs."
+    )
+    parser.add_argument(
+        "--file",
+        default="data/access.log",
+        help="Path to the log file to analyze (default: data/access.log)"
+    )
+    parser.add_argument(
+        "--top",
+        type=int,
+        default=10,
+        help="Number of top results to show per category (default: 10)"
+    )
+    parser.add_argument(
+        "--no-save",
+        action="store_true",
+        help="Skip saving report.txt and report.csv, only print to terminal"
+    )
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
-    records = parse_log_file("data/access.log")
-    print_report(records)
-    save_text_report(records)
-    save_csv_report(records)
+    args = parse_args()
+
+    records = parse_log_file(args.file)
+    print_report(records, top_n=args.top)
+
+    if not args.no_save:
+        save_text_report(records, top_n=args.top)
+        save_csv_report(records, top_n=args.top)
